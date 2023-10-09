@@ -6,15 +6,29 @@ management:
   endpoint:
     shutdown:
       enabled: true
+    health:
+      show-details: always
   endpoints:
+    beans:
+      enable: false
     web:
       exposure:
-        include: shutdown
+        include: "*"
+  health:
+    circuitbreakers:
+      enabled: true
+    ratelimiters:
+      enabled: true
 
 
 spring:
   application:
     name: ORDER-SERVICE
+  zipkin:
+    base-url: http://localhost:9411
+  sleuth:
+    sampler:
+      probability: 1.0
   datasource:
     url: jdbc:mysql://localhost:3306/orderService?createDatabaseIfNotExist=true&autoReconnect=true&useSSL=false
     username: hasan
@@ -33,7 +47,41 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone : http://localhost:8761/eureka/
+      defaultZone : http://eureka:password@localhost:8761/eureka/
 
-  
-  
+
+
+resilience4j:
+  timelimiter:
+    instances:
+      inventory:
+        timeout-duration: 10s
+  retry:
+    instances:
+      inventory:
+        max-attempts: 3
+        wait-duration: 5s
+  circuitbreaker:
+    instances:
+      inventory:
+        register-health-indicator: true
+        event-consumer-buffer-size: 10
+        sliding-window-type: count_based
+        sliding-window-size: 5
+        failure-rate-threshold: 50
+        permitted-number-of-calls-in-half-open-state: 2
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+  ratelimiter:
+    metrics:
+      enabled: true
+    instances:
+      inventory:
+        register-health-indicator: true
+        limit-for-period: 2
+        limit-refresh-period: 60s
+        timeout-duration: 0s
+        allow-health-indicator-to-fail: true
+        subscribe-for-events: true
+        event-consumer-buffer-size: 50
+

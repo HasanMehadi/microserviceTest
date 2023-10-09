@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface OrderService {
 
-    ResponseEntity<?> createOrder(OrderDto orderDto);
+    String createOrder(OrderDto orderDto);
 
     ResponseEntity<?> getOrder(Long id);
 

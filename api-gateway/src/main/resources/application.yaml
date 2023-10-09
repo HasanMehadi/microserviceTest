@@ -14,7 +14,8 @@ management:
 eureka:
   client:
     service-url:
-      defaultZone : http://localhost:8761/eureka/
+      defaultZone : http://eureka:password@localhost:8761/eureka/
+    register-with-eureka: true
 
 
 logging:
@@ -23,34 +24,17 @@ logging:
     org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator: info
     org.springframework.cloud.gateway: trace
 
-
-application:
-  security:
-    jwt:
-      secret-key:  bd8f4809-710b-4f60-bbda-233b920b893d
-      expiration: 3600
-      header: Authorization
-      refresh-token:
-        expiration: 604800
-
 spring:
   application:
     name: API-GATEWAY
-  datasource:
-    url: jdbc:mysql://localhost:3306/batteryService?createDatabaseIfNotExist=true&autoReconnect=true&useSSL=false
-    username: hasan
-    password: hasan
-    driver-class-name: com.mysql.cj.jdbc.Driver
-  jpa:
-    show-sql: false
-    hibernate:
-      ddl-auto: update
-    open-in-view: false
-    properties:
-      hibernate:
-         format_sql: true
-         enable_lazy_load_no_trans: true
+  zipkin:
+    base-url: http://localhost:9411
+  sleuth:
+    sampler:
+      probability: 1.0
   cloud:
+    discovery:
+      enabled: true
     gateway:
       routes:
         - id: product-service
@@ -79,4 +63,3 @@ spring:
           uri: http://localhost:8761
           predicates:
             - Path=/eureka/**
-

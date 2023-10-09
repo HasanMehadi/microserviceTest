@@ -6,6 +6,7 @@ import com.microservice.inventoryservice.mappers.ModelEntityConversionUtil;
 import com.microservice.inventoryservice.model.Inventory;
 import com.microservice.inventoryservice.repository.InventoryRepository;
 import com.microservice.inventoryservice.utils.ResponseGenerator;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @SneakyThrows
     public ResponseEntity<?> getInventoryBySku(String sku) {
         Optional<Inventory> inventory = inventoryRepository.findBySkuIgnoreCase(sku);
 

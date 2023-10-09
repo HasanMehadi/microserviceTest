@@ -22,6 +22,7 @@ public class ProductController {
 
     @GetMapping("/get-product/")
     public ResponseEntity<?> getProduct(@RequestParam("id") Long id){
+
         return productService.getProduct(id);
     }
 

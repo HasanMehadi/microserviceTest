@@ -11,6 +11,8 @@ import com.microservice.orderservice.repository.OrderRepository;
 import com.microservice.prodectservice.utils.ResponseGenerator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -34,28 +36,33 @@ public class OrderServiceImpl implements OrderService{
 
     @Autowired
     private ApiManagerGateway apiManagerGateway;
+    @Autowired
+    private Tracer tracer;
     @Override
-    public ResponseEntity<?> createOrder(OrderDto orderDto) {
+    public String createOrder(OrderDto orderDto) {
 
-        try{
-            if(orderDto.getOrderItemDtoList().isEmpty()){
-                return ResponseGenerator.generateResponse("Failed to save Order, No item found", HttpStatus.EXPECTATION_FAILED);
-            }
-            List<OrderItem> orderItemList = modelMapper.convertList(orderDto.getOrderItemDtoList(), OrderItem.class);
-            Order order = modelMapper.convert(orderDto, Order.class);
-            order = orderRepository.save(order);
 
-            for (OrderItem orderItem: orderItemList) {
-                 orderItem.setOrder(order);
-                 orderItemRepository.save(orderItem);
-                 String inventory =  apiManagerGateway.getInventoryBySku(orderItem);
-            }
-            log.info("Order is saved");
-            return ResponseGenerator.generateResponse("Created", HttpStatus.CREATED);
-        }catch (Exception ex){
-            log.error("failed to save Order");
-            return ResponseGenerator.generateResponse("Failed to save Order", HttpStatus.EXPECTATION_FAILED);
+        if (orderDto.getOrderItemDtoList().isEmpty()) {
+            return "Failed to save Order, No item found";
         }
+        List<OrderItem> orderItemList = modelMapper.convertList(orderDto.getOrderItemDtoList(), OrderItem.class);
+        Order order = modelMapper.convert(orderDto, Order.class);
+        order = orderRepository.save(order);
+
+        for (OrderItem orderItem : orderItemList) {
+            orderItem.setOrder(order);
+            orderItemRepository.save(orderItem);
+            Span inventorySpan = tracer.nextSpan().name("inventoryService");
+            try(Tracer.SpanInScope spanInScope = tracer.withSpan(inventorySpan.start())){
+                String inventory = apiManagerGateway.getInventoryBySku(orderItem);
+            }finally {
+                inventorySpan.end();
+            }
+
+        }
+        log.info("Order is saved");
+        return "Created";
+
     }
 
     @Override
